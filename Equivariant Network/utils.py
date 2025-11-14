@@ -107,7 +107,6 @@ def get_transformations_train(aug):
         pre_transform = transforms.Compose(
             [
                 transforms.RandomCrop(32),
-                transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
             ]
         )
@@ -190,7 +189,7 @@ def train_model(
                 acc_r="%.3f" % accuracy_r,
             )
 
-        test_acc = validation_acc(cnn, test_loader)
+        test_acc = validation_acc(cnn, test_loader, device)
         if test_acc >= best_acc:
             best_acc = test_acc
             best_epoch = epoch

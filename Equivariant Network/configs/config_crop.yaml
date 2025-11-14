@@ -1,4 +1,4 @@
-time: '202511141253'
+time: "202511141253"
 dataset: cifar10
 model: resnet18
 batch_size: 128
@@ -11,7 +11,7 @@ bias: false
 reduction: 2.0
 groups: 2
 dropout: 0.2
-note: ''
-train_aug: none
+note: ""
+train_aug: crop
 linear: false
 head: linear
