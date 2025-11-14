@@ -15,13 +15,13 @@ import gc
 
 
 def get_cifar_loaders(config):
-    train_transform = get_transformations_train(config.train_aug)
+    train_transform, test_transform = get_transformations_train(config.train_aug)
     train_dataset = datasets.CIFAR10(
         root="./data", train=True, transform=train_transform, download=True
     )
 
     test_dataset = datasets.CIFAR10(
-        root="./data", train=False, transform=transforms.Compose([]), download=True
+        root="./data", train=False, transform=test_transform, download=True
     )
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset,
@@ -128,7 +128,7 @@ N_RUNS = 3
 
 
 def main():
-    config_path = "./configs/config.yaml"
+    config_path = "./configs/config_crop.yaml"
     with open(config_path, "r") as f:
         data = yaml.safe_load(f)
         config = TrainConfig(**data)

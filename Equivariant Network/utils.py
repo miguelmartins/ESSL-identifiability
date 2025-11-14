@@ -127,7 +127,9 @@ def get_transformations_train(aug):
                 transforms.ToTensor(),
             ]
         )
-    return Rotation(base_transform=pre_transform, post_transform=normalize)
+    return Rotation(
+        base_transform=pre_transform, post_transform=normalize
+    ), base_transform
 
 
 def train_model(

@@ -8,6 +8,7 @@ pyproject.toml
 node_modules/
 tb_*/
 logs*/
+checkpoints/
 lightning_logs/
 .git/*
 *.pt
