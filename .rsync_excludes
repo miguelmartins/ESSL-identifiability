@@ -1,0 +1,14 @@
+__pycache__/
+*.ipynb_checkpoints
+*.pyc
+.env
+.venv
+.vscode/
+pyproject.toml
+node_modules/
+tb_*/
+logs*/
+lightning_logs/
+.git/*
+*.pt
+data/
