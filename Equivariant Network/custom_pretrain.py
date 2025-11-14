@@ -97,7 +97,7 @@ def run_experiment(*, device, config, config_path, run):
         cnn = C4resnet18(config.dropout, num_classes=num_classes, head=config.head)
     criterion, optimizer, scheduler = get_optimization_objects(config, cnn)
 
-    metric_logger, experiment_name = setup_logs(config, config_path, run_number=i)
+    metric_logger, experiment_name = setup_logs(config, config_path, run_number=run)
     try:
         train_model(
             config=config,
@@ -110,6 +110,7 @@ def run_experiment(*, device, config, config_path, run):
             scheduler=scheduler,
             run=run,
             experiment_name=experiment_name,
+            device=device,
         )
     finally:
         del train_loader

@@ -1,13 +1,13 @@
 import torch
 
 
-def validation_acc(cnn, loader):
+def validation_acc(cnn, loader, device):
     cnn.eval()  # Change model to 'eval' mode (BN uses moving mean/var).
     correct = 0.0
     total = 0.0
     for images, labels in loader:
-        images = images.cuda()
-        labels = labels.cuda()
+        images = images.to(device)
+        labels = labels.to(device)
 
         with torch.no_grad():
             pred = cnn(images)

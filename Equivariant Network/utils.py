@@ -103,6 +103,14 @@ def get_transformations_train(aug):
     base_transform.transforms.append(normalize)
     if aug == "none":
         pre_transform = transforms.ToTensor()
+    elif aug == "crop":
+        pre_transform = transforms.Compose(
+            [
+                transforms.RandomCrop(32),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+            ]
+        )
     elif aug == "sup":
         pre_transform = transforms.Compose(
             [
@@ -135,11 +143,13 @@ def train_model(
     scheduler,
     run,
     experiment_name,
+    device,
 ):
     best_acc = 0
     best_epoch = 0
 
     # Training
+    cnn.to(device)
     for epoch in range(config.epochs):
         xentropy_loss_avg = 0.0
         correct = 0.0
@@ -152,9 +162,9 @@ def train_model(
 
             images, rotations = images
 
-            images = images.cuda()
-            rotations = rotations.cuda()
-            labels = labels.cuda()
+            images = images.to(device)
+            rotations = rotations.to(device)
+            labels = labels.to(device)
 
             cnn.zero_grad()
             pred, pred_rot = cnn(images, rot_pred=True)
@@ -201,8 +211,8 @@ def train_model(
         if (epoch + 1) % 200 == 0:
             torch.save(
                 cnn.state_dict(),
-                "checkpoints/" + experiment_name + "_epoch" + str(epoch) + ".pt",
+                f"checkpoints/{run}/" + experiment_name + "_epoch" + str(epoch) + ".pt",
             )
 
-    torch.save(cnn.state_dict(), "checkpoints/" + experiment_name + ".pt")
+    torch.save(cnn.state_dict(), f"checkpoints/{run}/" + experiment_name + ".pt")
     logger.close()
