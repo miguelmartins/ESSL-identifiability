@@ -14,8 +14,10 @@ from eval import validation_acc
 import gc
 
 
-def get_cifar_loaders(config):
-    train_transform, test_transform = get_transformations_train(config.train_aug)
+def get_cifar_loaders(config, adversarial=None):
+    train_transform, test_transform = get_transformations_train(
+        config.train_aug, adversarial=adversarial
+    )
     train_dataset = datasets.CIFAR10(
         root="./data", train=True, transform=train_transform, download=True
     )
@@ -88,9 +90,8 @@ def setup_logs(config, config_path, run_number=None):
 
 
 def run_experiment(*, device, config, config_path, run):
-    train_transform = get_transformations_train(config.train_aug)
     num_classes = 10
-    train_loader, test_loader = get_cifar_loaders(config)
+    train_loader, test_loader = get_cifar_loaders(config, adversarial=True)
     if config.model == "resnet18":
         cnn = resnet18(config.dropout, num_classes=num_classes, head=config.head)
     else:
@@ -121,26 +122,33 @@ def run_experiment(*, device, config, config_path, run):
         del scheduler
         del metric_logger
         gc.collect()
-        torch.cuda.empty_cache()
+        try:
+            torch.cuda.empty_cache()
+        except:
+            print("No cuda")
 
 
 N_RUNS = 3
 
 
 def main():
-    config_path = "./configs/config_crop.yaml"
-    with open(config_path, "r") as f:
-        data = yaml.safe_load(f)
-        config = TrainConfig(**data)
-    device = torch.device(
-        "cuda"
-        if torch.cuda.is_available()
-        else "mps"
-        if torch.backends.mps.is_available()
-        else "cpu"
-    )
-    for run in range(N_RUNS):
-        run_experiment(device=device, config=config, config_path=config_path, run=run)
+    configs = ["simclr2"]
+    for conf in configs:
+        config_path = f"./configs/config_{conf}.yaml"
+        with open(config_path, "r") as f:
+            data = yaml.safe_load(f)
+            config = TrainConfig(**data)
+        device = torch.device(
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
+        for run in range(N_RUNS):
+            run_experiment(
+                device=device, config=config, config_path=config_path, run=run
+            )
 
 
 if __name__ == "__main__":

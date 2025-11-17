@@ -1,0 +1,17 @@
+time: "202511141253"
+dataset: cifar10
+model: resnet18
+batch_size: 128
+epochs: 200
+learning_rate: 0.05
+no_cuda: false
+seed: 2020
+kernel: 3
+bias: false
+reduction: 2.0
+groups: 2
+dropout: 0.2
+note: ""
+train_aug: simclr2
+linear: false
+head: linear
