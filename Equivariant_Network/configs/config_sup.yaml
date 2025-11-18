@@ -14,4 +14,4 @@ dropout: 0.2
 note: ""
 train_aug: sup
 linear: false
-head: linear
+head: mlp

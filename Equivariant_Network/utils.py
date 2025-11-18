@@ -227,6 +227,91 @@ def train_model(
     logger.close()
 
 
+def train_probe_adversarial(
+    *,
+    config,
+    train_loader,
+    dev_loader,
+    test_loader,
+    cnn,
+    criterion,
+    optimizer,
+    logger,
+    scheduler,
+    run,
+    experiment_name,
+    device,
+):
+    best_acc = 0
+    best_epoch = 0
+
+    # Training
+    cnn.to(device)
+    for epoch in range(config.epochs):
+        xentropy_loss_avg = 0.0
+        correct = 0.0
+        correct_r = 0
+        total = 0.0
+
+        progress_bar = tqdm(train_loader)
+        for i, (images, labels) in enumerate(progress_bar):
+            progress_bar.set_description("Epoch " + str(epoch))
+
+            images, rotations = images
+
+            images = images.to(device)
+            rotations = rotations.to(device)
+            labels = labels.to(device)
+
+            cnn.zero_grad()
+            pred, _ = cnn(images, rot_pred=True)
+
+            xentropy_loss = criterion(pred, labels)
+            xentropy_loss.backward()
+            optimizer.step()
+
+            xentropy_loss_avg += xentropy_loss.item()
+
+            # Calculate running average of accuracy
+            pred = torch.max(pred.data, 1)[1]
+            total += labels.size(0)
+            correct += (pred == labels.data).sum().item()
+            accuracy = correct / total
+
+            progress_bar.set_postfix(
+                xentropy="%.3f" % (xentropy_loss_avg / (i + 1)),
+                acc="%.3f" % accuracy,
+            )
+
+        test_acc = validation_acc(cnn, dev_loader, device)
+        if test_acc >= best_acc:
+            best_acc = test_acc
+            best_epoch = epoch
+        adv_acc = validation_acc(cnn, test_loader, device)
+        tqdm.write(
+            "test_acc: %.5f, adv_acc: %.5f, best_acc: %.5f, best_epoch: %d"
+            % (test_acc, adv_acc, best_acc, best_epoch)
+        )
+        # scheduler.step(epoch)  # Use this line for PyTorch <1.4
+        scheduler.step()  # Use this line for PyTorch >=1.4
+
+        row = {
+            "epoch": str(epoch),
+            "train_acc": str(accuracy),
+            "test_acc": str(test_acc),
+            "adv_acc": str(adv_acc),
+        }
+        logger.writerow(row)
+        if (epoch + 1) % 200 == 0:
+            torch.save(
+                cnn.state_dict(),
+                f"checkpoints/{run}/" + experiment_name + "_epoch" + str(epoch) + ".pt",
+            )
+
+    torch.save(cnn.state_dict(), f"checkpoints/{run}/" + experiment_name + ".pt")
+    logger.close()
+
+
 def train_model_adv(
     *,
     config,
@@ -314,6 +399,78 @@ def train_model_adv(
             )
 
     torch.save(cnn.state_dict(), f"checkpoints/{run}/" + experiment_name + ".pt")
+    logger.close()
+
+
+def train_probe_adv(
+    cnn,
+    probe,
+    criterion,
+    optimizer,
+    scheduler,
+    train_loader,
+    dev_loader,
+    test_loader,
+    logger,
+    epochs=200,
+):
+    for epoch in range(epochs):
+        xentropy_loss_avg = 0.0
+        correct = 0.0
+        correct_r = 0
+        total = 0.0
+
+        progress_bar = tqdm(train_loader)
+        for i, (images, labels) in enumerate(progress_bar):
+            progress_bar.set_description("Epoch " + str(epoch))
+
+            images, rotations = images
+
+            images = images.cuda()
+            rotations = rotations.cuda()
+            labels = labels.cuda()
+
+            cnn.zero_grad()
+            z = cnn(images, rot_pred=False)
+            pred = probe(z)
+            xentropy_loss = criterion(pred, labels)
+            xentropy_loss.backward()
+            optimizer.step()
+
+            xentropy_loss_avg += xentropy_loss.item()
+
+            # Calculate running average of accuracy
+            pred = torch.max(pred.data, 1)[1]
+            total += labels.size(0)
+            correct += (pred == labels.data).sum().item()
+            correct_r += (z.argmax(dim=1) == rotations.data).sum().item()
+            accuracy = correct / total
+            accuracy_r = correct_r / total
+
+            progress_bar.set_postfix(
+                xentropy="%.3f" % (xentropy_loss_avg / (i + 1)),
+                acc="%.3f" % accuracy,
+                acc_r="%.3f" % accuracy_r,
+            )
+
+        test_acc = test(test_loader)
+        if test_acc >= best_acc:
+            best_acc = test_acc
+            best_epoch = epoch
+        tqdm.write(
+            "test_acc: %.5f, best_acc: %.5f, best_epoch: %d"
+            % (test_acc, best_acc, best_epoch)
+        )
+        # scheduler.step(epoch)  # Use this line for PyTorch <1.4
+        scheduler.step()  # Use this line for PyTorch >=1.4
+
+        row = {
+            "epoch": str(epoch),
+            "train_acc": str(accuracy),
+            "test_acc": str(test_acc),
+            "rot_acc": str(accuracy_r),
+        }
+        logger.writerow(row)
     logger.close()
 
 
