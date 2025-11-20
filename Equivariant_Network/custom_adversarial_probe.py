@@ -212,6 +212,7 @@ def try_load(model, state):
 def run_experiment(*, device, config, config_path, checkpoint_path, run):
     num_classes = 10
     config.train_aug = "none"
+    config.time += "_probe"
     train_loader, dev_loader, test_loader = get_cifar_loaders(
         config, adversarial=AddLinfNoise
     )
@@ -242,7 +243,6 @@ def run_experiment(*, device, config, config_path, checkpoint_path, run):
 
     criterion = nn.CrossEntropyLoss().to(device)
     metric_logger, experiment_name = setup_logs(config, config_path, run_number=run)
-    config.time += "_probe"
     try:
         train_probe_adversarial(
             config=config,
