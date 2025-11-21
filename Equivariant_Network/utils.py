@@ -90,6 +90,14 @@ def get_transformations_train(aug, adversarial=None):
         color_distort = transforms.Compose([rnd_color_jitter, rnd_gray])
         return color_distort
 
+    def stronger_distortion():
+        # Check Fig. 10 of https://arxiv.org/pdf/2203.13457
+        color_jitter = transforms.ColorJitter(1.0, 1.0, 1.0, 0.5)
+        rnd_color_jitter = transforms.RandomApply([color_jitter], p=0.8)
+        rnd_gray = transforms.RandomGrayscale(p=0.2)
+        color_distort = transforms.Compose([rnd_color_jitter, rnd_gray])
+        return color_distort
+
     normalize = transforms.Normalize(
         mean=[x / 255.0 for x in [125.3, 123.0, 113.9]],
         std=[x / 255.0 for x in [63.0, 62.1, 66.7]],
@@ -126,6 +134,15 @@ def get_transformations_train(aug, adversarial=None):
                 transforms.RandomResizedCrop(32),
                 transforms.RandomHorizontalFlip(p=0.5),
                 get_color_distortion(s=1),
+                transforms.ToTensor(),
+            ]
+        )
+    elif aug == "simclr3":
+        pre_transform = transforms.Compose(
+            [
+                transforms.RandomResizedCrop(32),
+                transforms.RandomHorizontalFlip(p=0.5),
+                stronger_distortion(),
                 transforms.ToTensor(),
             ]
         )
